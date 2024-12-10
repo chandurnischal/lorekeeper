@@ -1,0 +1,4 @@
+.lorekeeper/
+data/
+database/
+.env
