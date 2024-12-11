@@ -2,6 +2,7 @@ import os
 import faiss
 import numpy as np
 import json
+from flask import Flask, request, jsonify
 from langchain.embeddings import HuggingFaceEmbeddings
 import ollama
 
@@ -9,6 +10,8 @@ import ollama
 embeddings_folder = "embeddings"
 index_file = "faiss_index.index"
 metadata_file = "metadata.json"
+
+app = Flask(__name__)
 
 # Load FAISS index
 def load_faiss_index():
@@ -59,27 +62,27 @@ def generate_response(query, relevant_chunks):
 
     return response["message"]["content"]
 
-# Main query script
-def main():
+# API endpoint to handle queries
+@app.route("/query", methods=["POST"])
+def handle_query():
     try:
+        data = request.get_json()
+        query = data.get("query")
+        if not query:
+            return jsonify({"error": "Query parameter is required."})
+
         index = load_faiss_index()
         metadata = load_metadata()
-    except FileNotFoundError as e:
-        print(e)
-        return
-
-    print("FAISS index and metadata loaded successfully.")
-
-    while True:
-        query = input("Enter your query (or type 'exit' to quit): ")
-        if query.lower() == "exit":
-            break
 
         relevant_chunks, _ = retrieve_relevant_chunks(query, index, metadata)
         response = generate_response(query, relevant_chunks)
 
-        print("\nGenerated Response:")
-        print(response)
+        return jsonify({"response": response}), 200
+
+    except FileNotFoundError as e:
+        return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    main()
+    app.run(host="0.0.0.0", port=5000)

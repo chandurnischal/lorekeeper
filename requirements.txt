@@ -1,0 +1,9 @@
+numpy
+langchain
+langchain-community
+pypdf
+faiss-cpu
+PyPDF2
+ollama
+sentence-transformers
+flask
