@@ -1,9 +1,10 @@
 numpy
 langchain
 langchain-community
-pypdf
+langchain-huggingface
+PyMuPDF
+streamlit
 faiss-cpu
-PyPDF2
 ollama
+tqdm
 sentence-transformers
-flask

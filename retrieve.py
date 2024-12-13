@@ -2,22 +2,19 @@ import os
 import faiss
 import numpy as np
 import json
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 import ollama
 
-# Directory paths
 embeddings_folder = "embeddings"
 index_file = "faiss_index.index"
 metadata_file = "metadata.json"
 
-# Load FAISS index
 def load_faiss_index():
     index_path = os.path.join(embeddings_folder, index_file)
     if not os.path.exists(index_path):
         raise FileNotFoundError(f"FAISS index file not found at {index_path}. Make sure the embedding script has been run.")
     return faiss.read_index(index_path)
 
-# Load metadata
 def load_metadata():
     metadata_path = os.path.join(embeddings_folder, metadata_file)
     if not os.path.exists(metadata_path):
@@ -25,25 +22,29 @@ def load_metadata():
     with open(metadata_path, "r") as f:
         return json.load(f)
 
-# Retrieve the most relevant chunks
 def retrieve_relevant_chunks(query, index, metadata, top_k=5):
-    embeddings_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    embeddings_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
     query_embedding = embeddings_model.embed_query(query)
 
-    # Search in FAISS index
     query_vector = np.array([query_embedding], dtype=np.float32)
     distances, indices = index.search(query_vector, top_k)
 
-    # Extract the relevant chunks from metadata
     relevant_chunks = [metadata[idx] for idx in indices[0]]
     return relevant_chunks, distances[0]
 
-# Generate response using the Llama model
 def generate_response(query, relevant_chunks):
+
     SYSTEM_PROMPT = (
-        """You are a helpful reading assistant who answers questions "
-        "based on snippets of text provided in context. Answer only using the context provided, "
-        "being as concise as possible. If you're unsure, just say that you don't know. "
+        """
+        You are Lorekeeper, an AI assistant specialized in answering questions about *The Lord of the Rings* and *The Hobbit* books. Your knowledge is strictly limited to these books, and you must only use the provided context to generate responses.
+
+        Guidelines:
+        1. Only respond using the information contained in the given context.
+        2. If the answer to the query is not explicitly found in the context, respond with: "I cannot answer that based on the information provided."
+        3. Do not make assumptions, provide opinions, or fabricate information beyond the given context.
+        4. Maintain a respectful and neutral tone in your responses.
+
+        Your role is to faithfully assist users in understanding these works while staying true to the source material.  
         """
     )
 
@@ -59,8 +60,7 @@ def generate_response(query, relevant_chunks):
 
     return response["message"]["content"]
 
-# Main query script
-def main():
+def cli():
     try:
         index = load_faiss_index()
         metadata = load_metadata()
@@ -80,6 +80,3 @@ def main():
 
         print("\nGenerated Response:")
         print(response)
-
-if __name__ == "__main__":
-    main()

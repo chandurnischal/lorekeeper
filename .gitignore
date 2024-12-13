@@ -1,3 +1,4 @@
-.lorekeeper/
 data/
 embeddings/
+.lorekeeper/
+__pycache__/
