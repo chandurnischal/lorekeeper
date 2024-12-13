@@ -6,10 +6,13 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 import fitz
 from tqdm import tqdm
+from dotenv import load_dotenv
 
-data_folder = "data"
-embeddings_folder = "embeddings"
-index_file = "faiss_index.index"
+load_dotenv()
+
+data_folder=os.getenv("DATA_FOLDER")
+embeddings_folder=os.getenv("EMBEDDINGS_FOLDER")
+index_file=os.getenv("INDEX_FILE")
 
 def read_pdfs(folder):
     documents = []
@@ -45,7 +48,7 @@ def chunk_text_with_metadata(document_pages, file_name):
     return chunks_metadata
 
 def save_metadata(metadata):
-    metadata_path = os.path.join(embeddings_folder, "metadata.json")
+    metadata_path = os.path.join(embeddings_folder, os.getenv("METADATA_FILE"))
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=4)
     print(f"Metadata saved to {metadata_path}.")
@@ -61,8 +64,8 @@ if not documents:
     print("No PDF files found in the data folder.")
     exit()
 
-embeddings_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
-embedding_dim = 768
+embeddings_model = HuggingFaceEmbeddings(model_name=os.getenv("EMBEDDING_MODEL"))
+embedding_dim = int(os.getenv("EMBEDDING_DIM"))
 index = faiss.IndexFlatL2(embedding_dim)
 
 metadata = []

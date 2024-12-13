@@ -4,10 +4,13 @@ import numpy as np
 import json
 from langchain_huggingface import HuggingFaceEmbeddings
 import ollama
+from dotenv import load_dotenv
 
-embeddings_folder = "embeddings"
-index_file = "faiss_index.index"
-metadata_file = "metadata.json"
+load_dotenv()
+
+embeddings_folder=os.getenv("EMBEDDINGS_FOLDER")
+index_file=os.getenv("INDEX_FILE")
+metadata_file = os.getenv("METADATA_FILE")
 
 def load_faiss_index():
     index_path = os.path.join(embeddings_folder, index_file)
@@ -23,7 +26,7 @@ def load_metadata():
         return json.load(f)
 
 def retrieve_relevant_chunks(query, index, metadata, top_k=5):
-    embeddings_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+    embeddings_model = HuggingFaceEmbeddings(model_name=os.getenv("EMBEDDING_MODEL"))
     query_embedding = embeddings_model.embed_query(query)
 
     query_vector = np.array([query_embedding], dtype=np.float32)

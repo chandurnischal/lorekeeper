@@ -1,9 +1,13 @@
 import streamlit as st
 from retrieve import load_faiss_index, load_metadata, retrieve_relevant_chunks, generate_response
+from dotenv import load_dotenv
+import os
 
-embeddings_folder = "embeddings"
-index_file = "faiss_index.index"
-metadata_file = "metadata.json"
+load_dotenv()
+
+embeddings_folder=os.getenv("EMBEDDINGS_FOLDER")
+index_file=os.getenv("INDEX_FILE")
+metadata_file = os.getenv("METADATA_FILE")
 
 st.set_page_config(
     page_title="Lorekeeper",
