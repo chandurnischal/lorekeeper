@@ -1,10 +1,10 @@
 numpy
 langchain
-langchain-community
-langchain-huggingface
+langchain - community
+langchain - huggingface
 PyMuPDF
 streamlit
-faiss-cpu
+faiss - cpu
 ollama
 tqdm
-sentence-transformers
+sentence - transformers

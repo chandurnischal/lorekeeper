@@ -10,9 +10,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-data_folder=os.getenv("DATA_FOLDER")
-embeddings_folder=os.getenv("EMBEDDINGS_FOLDER")
-index_file=os.getenv("INDEX_FILE")
+data_folder = os.getenv("DATA_FOLDER")
+embeddings_folder = os.getenv("EMBEDDINGS_FOLDER")
+index_file = os.getenv("INDEX_FILE")
+
 
 def read_pdfs(folder):
     documents = []
@@ -22,36 +23,37 @@ def read_pdfs(folder):
             try:
                 with fitz.open(file_path) as pdf:
                     document_pages = [
-                        (page.number + 1, page.get_text())
-                        for page in pdf
+                        (page.number + 1, page.get_text()) for page in pdf
                     ]
                     documents.append((file, document_pages))
             except Exception as e:
                 print(f"Error reading {file}: {e}")
     return documents
 
+
 def chunk_text_with_metadata(document_pages, file_name):
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
-    )
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     chunks_metadata = []
     for page_number, page_text in tqdm(document_pages, desc="Pages processed..."):
         chunks = text_splitter.split_text(page_text)
         for chunk_number, chunk in enumerate(chunks, start=1):
-            chunks_metadata.append({
-                "file": file_name,
-                "page_number": page_number,
-                "chunk_number": chunk_number,
-                "chunk": chunk
-            })
+            chunks_metadata.append(
+                {
+                    "file": file_name,
+                    "page_number": page_number,
+                    "chunk_number": chunk_number,
+                    "chunk": chunk,
+                }
+            )
     return chunks_metadata
+
 
 def save_metadata(metadata):
     metadata_path = os.path.join(embeddings_folder, os.getenv("METADATA_FILE"))
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=4)
     print(f"Metadata saved to {metadata_path}.")
+
 
 if not os.path.exists(embeddings_folder):
     os.makedirs(embeddings_folder)
@@ -65,6 +67,7 @@ if not documents:
     exit()
 
 embeddings_model = HuggingFaceEmbeddings(model_name=os.getenv("EMBEDDING_MODEL"))
+
 embedding_dim = int(os.getenv("EMBEDDING_DIM"))
 index = faiss.IndexFlatL2(embedding_dim)
 

@@ -8,26 +8,34 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-embeddings_folder=os.getenv("EMBEDDINGS_FOLDER")
-index_file=os.getenv("INDEX_FILE")
+embeddings_folder = os.getenv("EMBEDDINGS_FOLDER")
+index_file = os.getenv("INDEX_FILE")
 metadata_file = os.getenv("METADATA_FILE")
+
 
 def load_faiss_index():
     index_path = os.path.join(embeddings_folder, index_file)
     if not os.path.exists(index_path):
-        raise FileNotFoundError(f"FAISS index file not found at {index_path}. Make sure the embedding script has been run.")
+        raise FileNotFoundError(
+            f"FAISS index file not found at {index_path}. Make sure the embedding script has been run."
+        )
     return faiss.read_index(index_path)
+
 
 def load_metadata():
     metadata_path = os.path.join(embeddings_folder, metadata_file)
     if not os.path.exists(metadata_path):
-        raise FileNotFoundError(f"Metadata file not found at {metadata_path}. Make sure the embedding script has been run.")
+        raise FileNotFoundError(
+            f"Metadata file not found at {metadata_path}. Make sure the embedding script has been run."
+        )
     with open(metadata_path, "r") as f:
         return json.load(f)
 
+
 def retrieve_relevant_chunks(query, index, metadata, top_k=5):
-    embeddings_model = HuggingFaceEmbeddings(model_name=os.getenv("EMBEDDING_MODEL"))
-    query_embedding = embeddings_model.embed_query(query)
+    embedding_model = HuggingFaceEmbeddings(model_name=os.getenv("EMBEDDING_MODEL"))
+
+    query_embedding = embedding_model.embed_query(query)
 
     query_vector = np.array([query_embedding], dtype=np.float32)
     distances, indices = index.search(query_vector, top_k)
@@ -35,10 +43,10 @@ def retrieve_relevant_chunks(query, index, metadata, top_k=5):
     relevant_chunks = [metadata[idx] for idx in indices[0]]
     return relevant_chunks, distances[0]
 
+
 def generate_response(query, relevant_chunks):
 
-    SYSTEM_PROMPT = (
-        """
+    SYSTEM_PROMPT = """
         You are Lorekeeper, an AI assistant specialized in answering questions about *The Lord of the Rings* and *The Hobbit* books. Your knowledge is strictly limited to these books, and you must only use the provided context to generate responses.
 
         Guidelines:
@@ -49,7 +57,6 @@ def generate_response(query, relevant_chunks):
 
         Your role is to faithfully assist users in understanding these works while staying true to the source material.  
         """
-    )
 
     context = "\n".join(f"{chunk['chunk']}" for chunk in relevant_chunks)
 
@@ -62,6 +69,7 @@ def generate_response(query, relevant_chunks):
     )
 
     return response["message"]["content"]
+
 
 def cli():
     try:
