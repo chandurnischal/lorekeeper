@@ -2,6 +2,7 @@ import os
 import faiss
 import numpy as np
 import json
+from tqdm import tqdm
 from langchain_huggingface import HuggingFaceEmbeddings
 import ollama
 from dotenv import load_dotenv
@@ -91,3 +92,15 @@ def cli():
 
         print("\nGenerated Response:")
         print(response)
+
+def read_questions(source, destination):
+    with open(source, encoding="utf-8") as file:
+        questions = file.readlines()
+
+    index = load_faiss_index()
+    metadata = load_metadata()
+    with open(destination, encoding="utf-8", mode="w") as file:
+        for question in tqdm(questions):
+            relevant_chunk, _ = retrieve_relevant_chunks(query=question.strip(), index=index, metadata=metadata)
+            response = generate_response(query=question.strip(), relevant_chunks=relevant_chunk)
+            file.write("{}\n--------------------------------------------------------------------------------------\n".format(response))

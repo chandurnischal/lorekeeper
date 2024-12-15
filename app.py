@@ -16,8 +16,8 @@ metadata_file = os.getenv("METADATA_FILE")
 
 st.set_page_config(
     page_title="Lorekeeper",
-    layout="wide",
-    initial_sidebar_state="expanded",
+    layout="centered",
+    initial_sidebar_state="collapsed",
 )
 
 st.title("Lorekeeper")
@@ -33,9 +33,7 @@ if st.button("Submit"):
         index = load_faiss_index()
         metadata = load_metadata()
 
-        relevant_chunks, _ = retrieve_relevant_chunks(
-            query, index, metadata, top_k=3
-        )
+        relevant_chunks, _ = retrieve_relevant_chunks(query, index, metadata, top_k=5)
         response = generate_response(query, relevant_chunks)
 
         st.write("## Response")
