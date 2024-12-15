@@ -2,3 +2,4 @@ data/
 embeddings/
 .lorekeeper/
 __pycache__/
+responses/
