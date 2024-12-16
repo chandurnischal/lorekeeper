@@ -8,15 +8,7 @@ import fitz
 from spacy.lang.en import English
 from tqdm import tqdm
 from dotenv import load_dotenv
-
-load_dotenv()
-
-data_folder = os.getenv("DATA_FOLDER")
-embeddings_folder = os.getenv("EMBEDDINGS_FOLDER")
-index_file = os.getenv("INDEX_FILE")
-
-nlp = English()
-nlp.add_pipe("sentencizer")
+from time import perf_counter
 
 def read_pdfs(folder):
     documents = []
@@ -34,7 +26,7 @@ def read_pdfs(folder):
     return documents
 
 
-def chunk_text_with_metadata(document_pages, file_name):
+def chunk_text_with_metadata(nlp, document_pages, file_name):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     chunks_metadata = []
     for page_number, page_text in document_pages:
@@ -54,45 +46,60 @@ def chunk_text_with_metadata(document_pages, file_name):
     return chunks_metadata
 
 
-def save_metadata(metadata):
+def save_metadata(metadata, embeddings_folder):
     metadata_path = os.path.join(embeddings_folder, os.getenv("METADATA_FILE"))
     with open(metadata_path, "w") as f:
         json.dump(metadata, f)
     print(f"Metadata saved to {metadata_path}.")
 
 
-if not os.path.exists(embeddings_folder):
-    os.makedirs(embeddings_folder)
+def main():
+    load_dotenv()
 
-index_path = os.path.join(embeddings_folder, index_file)
+    data_folder = os.getenv("DATA_FOLDER")
+    embeddings_folder = os.getenv("EMBEDDINGS_FOLDER")
+    index_file = os.getenv("INDEX_FILE")
 
-documents = read_pdfs(data_folder)
+    nlp = English()
+    nlp.add_pipe("sentencizer")
 
-if not documents:
-    print("No PDF files found in the data folder.")
-    exit()
+    if not os.path.exists(embeddings_folder):
+        os.makedirs(embeddings_folder)
 
-embeddings_model = HuggingFaceEmbeddings(model_name=os.getenv("EMBEDDING_MODEL"))
+    index_path = os.path.join(embeddings_folder, index_file)
 
-embedding_dim = int(os.getenv("EMBEDDING_DIM"))
-index = faiss.IndexFlatL2(embedding_dim)
+    documents = read_pdfs(data_folder)
 
-metadata = []
-all_embeddings = []
+    if not documents:
+        print("No PDF files found in the data folder.")
+        exit()
 
-for file, document_pages in tqdm(documents, desc="Chunking"):
-    chunks_metadata = chunk_text_with_metadata(document_pages, file)
-    for chunk_metadata in chunks_metadata:
-        chunk_text = chunk_metadata["chunk"]
-        embedding = embeddings_model.embed_query(chunk_text)
-        index.add(np.array([embedding], dtype=np.float32))
+    embeddings_model = HuggingFaceEmbeddings(model_name=os.getenv("EMBEDDING_MODEL"))
 
-        metadata.append(chunk_metadata)
-        all_embeddings.append(embedding)
+    embedding_dim = int(os.getenv("EMBEDDING_DIM"))
+    index = faiss.IndexFlatL2(embedding_dim)
 
-faiss.write_index(index, index_path)
-print(f"FAISS index saved to {index_path}.")
+    metadata = []
+    all_embeddings = []
 
-save_metadata(metadata)
+    for file, document_pages in tqdm(documents, desc="Chunking"):
+        chunks_metadata = chunk_text_with_metadata(nlp, document_pages, file)
+        for chunk_metadata in chunks_metadata:
+            chunk_text = chunk_metadata["chunk"]
+            embedding = embeddings_model.embed_query(chunk_text)
+            index.add(np.array([embedding], dtype=np.float32))
 
-print("Embeddings and index saved successfully.")
+            metadata.append(chunk_metadata)
+            all_embeddings.append(embedding)
+
+    faiss.write_index(index, index_path)
+    print(f"FAISS index saved to {index_path}.")
+
+    save_metadata(metadata, embeddings_folder=embeddings_folder)
+
+    print("Embeddings and index saved successfully.")
+
+if __name__ == '__main__':
+    start = perf_counter()
+    main()
+    print('\n\nExecution time {} seconds'.format(round(perf_counter() - start, 2)))
