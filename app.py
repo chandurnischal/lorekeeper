@@ -33,7 +33,7 @@ if st.button("Submit"):
         index = load_faiss_index()
         metadata = load_metadata()
 
-        relevant_chunks, _ = retrieve_relevant_chunks(query, index, metadata, top_k=5)
+        relevant_chunks, _ = retrieve_relevant_chunks(query, index, metadata, top_k=10)
         response = generate_response(query, relevant_chunks)
 
         st.write("## Response")
