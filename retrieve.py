@@ -61,12 +61,16 @@ def generate_response(query, relevant_chunks):
 
     context = "\n".join(f"{chunk['chunk']}" for chunk in relevant_chunks)
 
-    response = ollama.chat(
+    ollama_host = os.getenv("OLLAMA_HOST", "http://ollama:11434")
+
+    client = ollama.Client(host=ollama_host)
+
+    response = client.chat(
         model="llama3.2:1b",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT + "\nContext:\n" + context},
             {"role": "user", "content": query},
-        ],
+        ]
     )
 
     return response["message"]["content"]
