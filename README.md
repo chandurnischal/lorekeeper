@@ -6,7 +6,7 @@
 sudo docker compose build
 ```
 
-2. Run Llama3.2:1n
+2. Run Llama3.2:1b
 
 ```
 sudo docker exec ollama ollama run llama3.2:1b
